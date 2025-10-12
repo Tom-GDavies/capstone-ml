@@ -1,0 +1,10 @@
+Vessels total: 4866
+ - Placeholder registry codes to drop: 1
+ - Scientific-notation registry codes to drop: 2
+Dropped vessels: 3 | removed 139 voyages, 19336 telemetry rows
+Blank track_label filled: 0
+Telemetry rows with all core fields NULL removed: 0
+Telemetry de-duplicated (voyage_id, observed_at, lat, lon): 0
+Impossible jumps removed (> 60.0 kn): 3
+
+Final counts -> vessels: 4,863 | voyages: 19,130 | telemetry: 1,156,009
