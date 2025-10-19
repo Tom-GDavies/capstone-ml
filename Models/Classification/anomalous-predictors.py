@@ -15,6 +15,8 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.layers import Input, Dense
+from tensorflow.keras.layers import BatchNormalization
+
 
 
 
@@ -129,14 +131,16 @@ input_layer = Input(shape=(input_dim,))
 
 # Encoder
 encoded = Dense(8, activation='relu')(input_layer)
+encoded = BatchNormalization()(encoded)
 encoded = Dense(4, activation='relu')(encoded)
 
 # Decoder
 decoded = Dense(8, activation='relu')(encoded)
-decoded = Dense(input_dim, activation='sigmoid')(decoded)
+encoded = BatchNormalization()(encoded)
+decoded = Dense(input_dim, activation='linear')(decoded)
 
 autoencoder = Model(inputs=input_layer, outputs=decoded)
-autoencoder.compile(optimizer=Adam(learning_rate=0.001), loss='mse')
+autoencoder.compile(optimizer=Adam(learning_rate=1e-4), loss='mse')
 
 
 
@@ -145,10 +149,15 @@ autoencoder.compile(optimizer=Adam(learning_rate=0.001), loss='mse')
 ############################################
 
 logistic_regression_model.fit(X_train_res, Y_train_res)
+joblib.dump(logistic_regression_model, "logistic_regression_anomaly.pkl")
 knn_model.fit(X_train_res, Y_train_res)
+joblib.dump(knn_model, "knn_anomaly.pkl")
 decision_tree_model.fit(X_train_res, Y_train_res)
+joblib.dump(decision_tree_model, "decision_tree_anomaly.pkl")
 xgb_model.fit(X_train_res, Y_train_encoded)
+joblib.dump(xgb_model, "xgboost_anomaly.pkl")
 svm_model.fit(X_train[Y_train == "normal"])
+joblib.dump(svm_model, "svm_anomaly.pkl")
 
 ############################################
 # TRAIN DENSE AUTOENCODER ON NORMAL SAMPLES ONLY
@@ -158,7 +167,7 @@ X_train_normal = X_train[Y_train.values == "normal"].values
 
 autoencoder.fit(
     X_train_normal, X_train_normal,
-    epochs=100,
+    epochs=30,
     batch_size=32,
     validation_split=0.2,
     verbose=1
@@ -190,6 +199,8 @@ threshold = np.percentile(train_mse, 95)
 
 Y_hat_autoencoder = np.where(mse > threshold, "anomalous", "normal")
 
+autoencoder.save("dense_autoencoder_ship_anomaly.h5")
+
 ############################################
 # EVALUTE PERFORMANCE
 ############################################
@@ -208,17 +219,6 @@ evaluate_model("Logistic Regression", Y_test, Y_hat_logistic_regression, logisti
 evaluate_model("KNN", Y_test, Y_hat_knn, knn_model.classes_)
 evaluate_model("Decision Tree", Y_test, Y_hat_decision_tree, decision_tree_model.classes_)
 evaluate_model("XGBoost", Y_test, Y_hat_xgboost, xgb_model.classes_)
-evaluate_model("SVM", Y_test, Y_hat_svm, svm_model.classes_)
-evaluate_model("Dense Autoencoder", Y_test, Y_hat_autoencoder, ["normal", "anomalous"])
-
-
-############################################
-# SAVE MODEL
-############################################
-
-joblib.dump(logistic_regression_model, "logistic_regression_ship_type.pkl")
-joblib.dump(knn_model, "knn_ship_type.pkl")
-joblib.dump(decision_tree_model, "decision_tree_ship_type.pkl")
-joblib.dump(xgb_model, "xgboost_ship_type.pkl")
-autoencoder.save("dense_autoencoder_ship_anomaly.h5")
+evaluate_model("SVM", Y_test, Y_hat_svm, ["anomalous", "normal"])
+evaluate_model("Dense Autoencoder", Y_test, Y_hat_autoencoder, ["anomalous", "normal"])
 
