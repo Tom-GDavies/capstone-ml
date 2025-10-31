@@ -1,73 +1,71 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
+import os
 
 # -------------------------------
 # 1. Load data
 # -------------------------------
-typical_df = pd.read_csv("Data/typical.csv")
-anomalous_df = pd.read_csv("Data/anomalous.csv")
-
-# Combine datasets if desired
-df = pd.concat([typical_df, anomalous_df], ignore_index=True)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+typical_df = pd.read_csv(os.path.join(script_dir, "Data", "typical.csv"))
+anomalous_df = pd.read_csv(os.path.join(script_dir, "Data", "anomalous.csv"))
 
 # -------------------------------
-# 2. Convert TIMESTAMP to time difference
+# 2. Preprocessing function (shared)
 # -------------------------------
-df['TIMESTAMP'] = pd.to_datetime(df['TIMESTAMP'], format="%Y-%m-%d %H:%M:%S")
-
-# Sort by Track_ID and TIMESTAMP
-df = df.sort_values(by=["Track_ID", "TIMESTAMP"])
-
-# Compute time difference in seconds within each Track_ID
-df['time_diff'] = df.groupby("Track_ID")['TIMESTAMP'].diff().dt.total_seconds().fillna(0)
-
-# -------------------------------
-# 3. Drop Track_ID and original TIMESTAMP
-# -------------------------------
-df = df.drop(columns=["Track_ID", "TIMESTAMP"])
+def preprocess(df):
+    df['TIMESTAMP'] = pd.to_datetime(df['TIMESTAMP'], format="%Y-%m-%d %H:%M:%S")
+    df = df.sort_values(by=["Track_ID", "TIMESTAMP"])
+    df['time_diff'] = df.groupby("Track_ID")['TIMESTAMP'].diff().dt.total_seconds().fillna(0)
+    df = df.drop(columns=["Track_ID", "TIMESTAMP"])
+    df = df.reset_index(drop=True)
+    return df
 
 # -------------------------------
-# 4. Normalise all numeric columns
+# 3. Process both datasets
 # -------------------------------
-numeric_cols = df.select_dtypes(include=[np.number]).columns
+typical_df_proc = preprocess(typical_df)
+anomalous_df_proc = preprocess(anomalous_df)
+
+# -------------------------------
+# 4. Normalise (fit on typical, transform both)
+# -------------------------------
+numeric_cols = typical_df_proc.select_dtypes(include=[np.number]).columns
 scaler = StandardScaler()
-df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
+typical_df_proc[numeric_cols] = scaler.fit_transform(typical_df_proc[numeric_cols])
+anomalous_df_proc[numeric_cols] = scaler.transform(anomalous_df_proc[numeric_cols])
 
 # -------------------------------
-# 5. Sort by index again if needed
-# -------------------------------
-df = df.reset_index(drop=True)
-
-# -------------------------------
-# 6. Create overlapping windows
+# 5. Windowing function
 # -------------------------------
 def create_windows(values, window_size=10, step_size=1):
     if len(values) < window_size:
-        return np.empty((0, window_size, values.shape[1]))  # empty 3D array
+        return np.empty((0, window_size, values.shape[1]))
     windows = []
     for i in range(0, len(values) - window_size + 1, step_size):
         windows.append(values[i:i + window_size])
     return np.array(windows)
 
-all_windows = []
+# -------------------------------
+# 6. Create windows per Track_ID
+# -------------------------------
+def make_all_windows(original_df, processed_df):
+    all_windows = []
+    for track_id, group in pd.concat([original_df[['Track_ID']], processed_df], axis=1).groupby("Track_ID"):
+        values = group[numeric_cols].values
+        windows = create_windows(values, window_size=10, step_size=1)
+        if windows.size > 0:
+            all_windows.append(windows)
+    return np.vstack(all_windows) if all_windows else np.empty((0, 10, len(numeric_cols)))
 
-for track_id, group in pd.concat([typical_df[['Track_ID']], df], axis=1).groupby("Track_ID"):
-    values = group[numeric_cols].values
-    windows = create_windows(values, window_size=10, step_size=1)
-    if windows.size > 0:  # skip empty windows
-        all_windows.append(windows)
-
-if all_windows:
-    X = np.vstack(all_windows)
-else:
-    X = np.empty((0, 10, len(numeric_cols)))  # fallback
+typical_windows = make_all_windows(typical_df, typical_df_proc)
+anomalous_windows = make_all_windows(anomalous_df, anomalous_df_proc)
 
 # -------------------------------
-# 7. Combine into one array
+# 7. Output results
 # -------------------------------
-X = np.vstack(all_windows)  # shape = (num_windows, 10, num_features)
+print("Typical windows shape:", typical_windows.shape)
+print("Anomalous windows shape:", anomalous_windows.shape)
 
-print("Final data shape:", X.shape)
-
-np.save("Data/windowed.npy", X)
+np.save(os.path.join(script_dir, "Data", "typical_windows.npy"), typical_windows)
+np.save(os.path.join(script_dir, "Data", "anomalous_windows.npy"), anomalous_windows)

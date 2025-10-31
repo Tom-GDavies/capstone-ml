@@ -2,7 +2,7 @@ import os
 import csv
 
 # Root dataset path
-BASE_DIR = os.path.expanduser("~/Documents/Uni/2025/DSTG/Machine-Learning-Models/Anomaly-Detection")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_ROOT = os.path.join(BASE_DIR, "Data/OMTAD/WestGrid")
 OUTPUT_TYPICAL = os.path.join(BASE_DIR, "Data/typical.csv")
 OUTPUT_ANOMALOUS = os.path.join(BASE_DIR, "Data/anomalous.csv")
