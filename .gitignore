@@ -2,9 +2,12 @@
 venv/
 */venv/
 
-# Ignore Anomaly-Detection folder and its contents
-Anomaly-Detection/
-*/Anomaly-Detection/
+# Ignore Anomaly-Detection/Data
+Anomaly-Detection/Data/
 
+# Ignore Brians Datasets
 MR_Dataset/
 */MR_Dataset/
+
+# no pickle files
+*.pkl
