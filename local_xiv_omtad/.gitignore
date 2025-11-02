@@ -1,0 +1,5 @@
+data/omtad/
+local_xiv_omtad/stage/
+local_xiv_omtad/models/
+deliverables/omtad_xiv/
+*.parquet

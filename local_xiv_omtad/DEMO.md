@@ -1,0 +1,2 @@
+1. Upload `deliverables/omtad_xiv/models/omtad_vessel_type.pkl` and `deliverables/omtad_xiv/models/omtad_fishing.pkl` in the demo UI.
+2. Pick a track_id from `deliverables/omtad_xiv/samples/demo_tracks.csv`, click “Classify Track”, and review the predicted class and probabilities.
