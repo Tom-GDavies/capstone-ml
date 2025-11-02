@@ -18,7 +18,7 @@ OUTPUT_SAMPLE = os.path.join(DATA_DIR, "mixed_sample.csv")
 # -------------------------------
 # Config
 # -------------------------------
-n_total = 100           # total rows in sample
+n_total = 100
 n_typical = n_total // 2
 n_anomalous = n_total - n_typical
 
@@ -28,7 +28,6 @@ n_anomalous = n_total - n_typical
 typical_windows = np.load(TYPICAL_PATH)
 anomalous_windows = np.load(ANOMALOUS_PATH)
 
-# Use last timestep to match model input
 if typical_windows.ndim == 3:
     typical_windows = typical_windows[:, -1, :]
     anomalous_windows = anomalous_windows[:, -1, :]
@@ -63,4 +62,4 @@ mixed_df = pd.concat([typical_df, anomalous_df]).sample(frac=1, random_state=42)
 # -------------------------------
 mixed_df.to_csv(OUTPUT_SAMPLE, index=False)
 print(f"Mixed sample CSV saved to: {OUTPUT_SAMPLE}")
-print(mixed_df.head(10))  # show first 10 rows for verification
+print(mixed_df.head(10))

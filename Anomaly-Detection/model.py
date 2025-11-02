@@ -27,7 +27,7 @@ train = True
 # ---------------------------
 # Load data
 # ---------------------------
-typical = np.load(typical_path)   # shape (n_samples, window_len, n_features) or (n_samples, n_features)
+typical = np.load(typical_path)
 anomalous = np.load(anomalous_path)
 
 # If data has 3 dims, take only the latest timestep (make it 2D)
@@ -64,13 +64,13 @@ def create_dense_autoencoder(input_dim):
         Dense(8, activation='relu'),
         Dense(16, activation='relu'),
         Dense(32, activation='relu'),
-        Dense(input_dim, activation='linear')  # reconstruct original input
+        Dense(input_dim, activation='linear') 
     ])
     model.compile(optimizer=Adam(1e-4), loss=Huber())
     return model
 
 
-input_dim = X_train.shape[1]  # should be 6 now
+input_dim = X_train.shape[1]
 
 if train:
     autoencoder = create_dense_autoencoder(input_dim)

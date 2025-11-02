@@ -7,8 +7,8 @@ import joblib
 # Config
 # -------------------------------
 script_dir = os.path.dirname(os.path.abspath(__file__))
-sample_csv_path = os.path.join(script_dir, "Data", "typical_sample.csv")  # preprocessed sample
-model_pkl_path = os.path.join(script_dir, "Data", "dense_autoencoder_model.pkl")  # joblib-saved model
+sample_csv_path = os.path.join(script_dir, "Data", "typical_sample.csv")
+model_pkl_path = os.path.join(script_dir, "Data", "dense_autoencoder_model.pkl")
 window_size = 10
 
 # -------------------------------
@@ -49,7 +49,6 @@ with open(model_pkl_path, "rb") as f:
 reconstructed = autoencoder.predict(X_test)
 mse = np.mean((X_test - reconstructed) ** 2, axis=1)
 
-# Example threshold: 85th percentile of MSE
 threshold = np.percentile(mse, 85)
 predictions = (mse > threshold).astype(int)  # 0 = typical, 1 = anomalous
 
